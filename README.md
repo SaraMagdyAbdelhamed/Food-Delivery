@@ -1,155 +1,93 @@
-# Food-Delivery
+Multi-Vendor Food Delivery Platform
+🚀 Project Overview
+Food Delivery Platform is a comprehensive multi-vendor food delivery ecosystem inspired by industry leaders like Talabat and Elmenus. The platform facilitates a seamless connection between hungry customers, a diverse range of local restaurants (vendors), and a reliable delivery network.
 
-## Overview
+Built with a robust Laravel API and a high-performance Frontend (Next.js/Vue.js), Laffa is engineered for scalability, real-time tracking, and secure financial transactions through an integrated wallet system.
 
-Food-Delivery is a comprehensive platform designed to connect customers with local restaurants, enabling seamless online food ordering and delivery services. The system aims to provide a user-friendly experience for browsing menus, placing orders, and tracking deliveries in real-time.
+🏗️ High-Level Features
+Customer Identity & Auth: Secure gateway with OTP and social integration.
 
-## Features
+Multi-Vendor Marketplace: Comprehensive restaurant discovery and menu browsing.
 
-### Functional Features
+Intelligent Cart System: Single-vendor enforcement and dynamic calculations.
 
-#### User Management
-- **User Registration and Authentication**: Secure sign-up and login for customers, restaurants, and delivery personnel
-- **Profile Management**: Users can update personal information, delivery addresses, and payment methods
-- **Role-based Access**: Different dashboards for customers, restaurant owners, and delivery drivers
+Order Lifecycle Management: Real-time processing from "Pending" to "Delivered."
 
-#### Restaurant Management
-- **Restaurant Onboarding**: Easy registration process for restaurants to join the platform
-- **Menu Management**: Restaurants can add, edit, and categorize menu items with prices, descriptions, and images
-- **Operating Hours**: Set and manage restaurant availability and delivery times
-- **Order Capacity**: Control maximum orders per time slot to manage workload
+Wallet & Payments: A closed-loop financial system with gateway integrations.
 
-#### Order Processing
-- **Menu Browsing**: Intuitive interface for customers to explore restaurant menus and filter by cuisine, price, or ratings
-- **Cart Management**: Add items to cart, customize orders (e.g., special instructions, dietary preferences)
-- **Order Placement**: Secure checkout process with multiple payment options
-- **Order Tracking**: Real-time updates on order status from preparation to delivery
-- **Order History**: View past orders and reorder favorites
+Live Tracking: Real-time movement updates via WebSockets.
 
-#### Delivery System
-- **Driver Assignment**: Automatic or manual assignment of delivery drivers based on location and availability
-- **Route Optimization**: Efficient routing to minimize delivery times
-- **Delivery Tracking**: GPS-based tracking for customers to monitor delivery progress
-- **Delivery Ratings**: Rate delivery experience and provide feedback
+Management Dashboards: Dedicated interfaces for Vendors and System Admins.
 
-#### Search and Discovery
-- **Advanced Search**: Find restaurants by name, cuisine, location, or specific dishes
-- **Recommendations**: Personalized suggestions based on order history and preferences
-- **Filters and Sorting**: Filter by delivery time, ratings, price range, and dietary options
+🛠️ Detailed Functional Requirements
+1. User Registration & Authentication
+Registration: Account creation with phone number validation.
 
-#### Payment Integration
-- **Multiple Payment Methods**: Support for credit cards, digital wallets, cash on delivery
-- **Secure Transactions**: PCI-compliant payment processing
-- **Refunds and Cancellations**: Easy refund process for order issues
+OTP Integration: Secure 2FA/Verification via Twilio Verify API.
 
-### Non-Functional Features
+Social Auth: Quick login via Google, Apple, or Facebook.
 
-#### Performance
-- **High Availability**: 99.9% uptime with redundant systems
-- **Scalability**: Handle peak loads during busy hours (e.g., lunch/dinner rushes)
-- **Fast Load Times**: Optimized for quick menu loading and order placement (<2 seconds)
+Forget Password: OTP-based recovery and secure reset.
 
-#### Security
-- **Data Encryption**: End-to-end encryption for sensitive information
-- **Secure Authentication**: Multi-factor authentication options
-- **Privacy Compliance**: GDPR and CCPA compliant data handling
+Session Management: Token-based authentication (Sanctum/Passport).
 
-#### Usability
-- **Responsive Design**: Mobile-first approach with cross-platform compatibility
-- **Intuitive UI/UX**: Easy navigation and clear visual hierarchy
-- **Accessibility**: WCAG 2.1 compliant for users with disabilities
+2. Profile Management
+Personal Info: Edit name, profile picture, and contact details.
 
-#### Reliability
-- **Error Handling**: Graceful error recovery and user-friendly error messages
-- **Backup and Recovery**: Regular data backups with disaster recovery plans
-- **Monitoring**: Real-time system monitoring and alerting
+Address Book: Manage multiple addresses (Home, Work, Other) with GPS pinning.
 
-## Technology Stack
+Order History: View detailed past orders with "One-Tap Reorder."
 
-- **Frontend**: React.js with responsive design
-- **Backend**: Node.js with Express framework
-- **Database**: MongoDB for flexible data storage
-- **Authentication**: JWT tokens with OAuth integration
-- **Payment**: Stripe API for secure transactions
-- **Mapping**: Google Maps API for location services
-- **Deployment**: Docker containers on cloud infrastructure
+Favorites: Save preferred restaurants and specific meals.
 
-## Installation
+3. Restaurant & Menu Management
+Vendor Onboarding: Application and approval workflow for new restaurants.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/SaraMagdyAbdelhamed/Food-Delivery.git
-   cd Food-Delivery
-   ```
+Menu Builder: Create categories (Appetizers, Mains) and add food items.
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+Advanced Add-ons: Manage variants (Sizes), optional toppings, and required choices.
 
-3. Set up environment variables:
-   Create a `.env` file with necessary API keys and database credentials.
+Status Control: Manual and scheduled "Open/Closed" toggles.
 
-4. Run the application:
-   ```bash
-   npm start
-   ```
+Inventory Management: Quick "Out of Stock" toggle for individual items.
 
-## Usage
+4. Cart Management
+Vendor Lock Logic: Ensures items are only added from one vendor at a time.
 
-1. **For Customers**:
-   - Register an account or log in
-   - Browse restaurants and menus
-   - Add items to cart and place orders
-   - Track orders in real-time
+Item Customization: Modify add-ons and special instructions within the cart.
 
-2. **For Restaurants**:
-   - Register restaurant profile
-   - Manage menus and pricing
-   - Receive and process orders
-   - Update order status
+Quantity Control: Real-time subtotal updates on quantity change.
 
-3. **For Delivery Drivers**:
-   - Register as a driver
-   - Accept delivery assignments
-   - Navigate to pickup and delivery locations
-   - Update delivery status
+Cart Persistence: Cart remains synced across different user devices.
 
-## API Documentation
+5. Order Management
+Workflow Engine: Moves orders through statuses (Accepted → Preparing → Out for Delivery).
 
-Detailed API endpoints and usage can be found in the `/docs` directory.
+Cancellation Policy: Automated logic for cancellations and wallet refunds.
 
-## Contributing
+Real-time Updates: Push notifications and in-app alerts via Pusher/Reverb.
 
-We welcome contributions! Please follow these steps:
+Live Tracking: Google Maps integration for driver location.
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Commit changes: `git commit -am 'Add new feature'`
-4. Push to branch: `git push origin feature-name`
-5. Submit a pull request
+6. Wallet & Payment Integration
+Top-up: Add balance via Credit Card, Debit Card, or local providers (Fawry/Paymob).
 
-## Testing
+Wallet Checkout: Seamless payment using stored balance.
 
-Run the test suite:
-```bash
-npm test
-```
+Transaction History: Detailed logs of all credits, debits, and refunds.
 
-## License
+COD Management: Support for Cash on Delivery with driver reconciliation.
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+7. Offers & Promotions
+Promo Codes: Percentage and fixed discounts with usage limits.
 
-## Contact
+Restaurant Deals: Specific meal-based offers (e.g., Buy 1 Get 1).
 
-For questions or support, please contact:
-- Email: support@food-delivery.com
-- GitHub Issues: [Create an issue](https://github.com/SaraMagdyAbdelhamed/Food-Delivery/issues)
+Campaign Banners: Targeted homepage banners for seasonal promotions.
 
-## Roadmap
+8. Dashboards & Analytics
+System Admin: Global sales overview, vendor approval, and commission settings.
 
-- [ ] Mobile app development
-- [ ] AI-powered menu recommendations
-- [ ] Integration with third-party delivery services
-- [ ] Advanced analytics dashboard for restaurants
-- [ ] Loyalty program implementation
+Vendor Portal: Daily revenue reports, top-selling items, and customer reviews.
+
+Driver App: Task queue, earnings per trip, and optimized routing.
