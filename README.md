@@ -183,124 +183,98 @@ erDiagram
     USERS ||--o{ CARTS : creates
     USERS ||--o{ ORDERS : places
     USERS ||--o{ WALLETS : owns
+    USERS ||--o{ USER_ADDRESSES : has_many
+    SUPER_CATEGORIES ||--|{ RESTAURANTS : contains
     RESTAURANTS ||--o{ CARTS : belongs_to
     RESTAURANTS ||--o{ ORDERS : fulfills
+    RESTAURANTS ||--o{ REVIEWS : receives
+    RESTAURANTS ||--|{ MENUS : offers
+    MENUS ||--|{ MENU_CATEGORIES : segmented_by
+    MENU_CATEGORIES ||--|{ PRODUCTS : lists
+    PRODUCTS ||--|{ PRODUCT_INGREDIENTS : composed_of
+    INGREDIENTS ||--o{ PRODUCT_INGREDIENTS : used_in
     CARTS ||--|{ CART_ITEMS : contains
     ORDERS ||--|{ ORDER_ITEMS : includes
     ORDERS ||--o{ ORDER_HISTORY : logs
     ORDERS ||--o{ TRANSACTIONS : generates
+    ORDERS ||--o{ SHIPMENTS : initiates
     TRANSACTIONS ||--|{ PAYMENT_AUDITS : audited_by
     TRANSACTIONS ||--o{ TRANSACTION_DETAILS : has_meta
     TRANSACTIONS ||--|{ TRANSACTION_HISTORY : tracks
     WALLETS ||--|{ WALLET_TRANSACTIONS : records
+    SHIPMENTS }|--|| SHIPMENT_PROVIDERS : handled_by
+    SHIPMENTS ||--|{ SHIPMENT_TRACKING : updates
+    REVIEWS ||--o{ COMMENTS : triggers
 
-    %% Table Definitions
+    %% Core Modules
     USERS {
         uuid id PK
         string name
         string email
         string phone
-        string password
+        enum role
+        string fcm_token
     }
-    CARTS {
+    USER_ADDRESSES {
         uuid id PK
         uuid user_id FK
-        uuid restaurant_id FK
-        string session_id
-        decimal total_amount
-        timestamp created_at
+        text address_line
+        decimal lat
+        decimal lng
     }
-    CART_ITEMS {
+    SUPER_CATEGORIES {
+        integer id PK
+        string name
+    }
+    RESTAURANTS {
         uuid id PK
-        uuid cart_id FK
-        uuid product_id FK
-        integer quantity
+        string name
+        boolean is_active
+        decimal rating
+    }
+    MENUS {
+        uuid id PK
+        string name
+        json availability_hours
+    }
+    MENU_CATEGORIES {
+        uuid id PK
+        string name
+    }
+    PRODUCTS {
+        uuid id PK
+        string name
         decimal price
-        json options
+        integer calories
+    }
+    INGREDIENTS {
+        uuid id PK
+        string name
+        string unit
+    }
+    %% Transactional
+    TRANACTIONS {
+        uuid id PK
+        decimal amount
+        string status
     }
     ORDERS {
         uuid id PK
         uuid user_id FK
         uuid restaurant_id FK
-        integer status_id FK
-        decimal subtotal
-        decimal delivery_fee
-        decimal discount
         decimal total_amount
-        string coupon_code
-        timestamp created_at
+        string status
     }
-    ORDER_ITEMS {
+    SHIPMENTS {
         uuid id PK
         uuid order_id FK
-        uuid product_id FK
-        string name
-        integer quantity
-        decimal unit_price
-        decimal total_price
-        json options
+        string tracking_number
+        string status
     }
-    ORDER_HISTORY {
+    REVIEWS {
         uuid id PK
-        uuid order_id FK
-        integer status_id FK
-        uuid changed_by_user_id FK
-        text reason
-        timestamp created_at
-    }
-    TRANSACTIONS {
-        uuid id PK
-        uuid order_id FK
-        uuid user_id FK
-        decimal amount
-        string currency
-        integer type_id FK
-        integer status_id FK
-        string transaction_reference
-    }
-    TRANSACTION_DETAILS {
-        uuid id PK
-        uuid transaction_id FK
-        json gateway_response
-        text error_message
-        string ip_address
-    }
-    TRANSACTION_HISTORY {
-        uuid id PK
-        uuid transaction_id FK
-        integer status_from FK
-        integer status_to FK
-    }
-    TRANSACTION_INTEGRATION_CONFIGURATIONS {
-        integer id PK
-        string provider_name
-        boolean is_active
-        enum mode
-        text api_key
-        text api_secret
-    }
-    PAYMENT_AUDITS {
-        uuid id PK
-        uuid transaction_id FK
-        string action
-        uuid performed_by FK
-        json old_values
-        json new_values
-    }
-    WALLETS {
-        uuid id PK
-        uuid user_id FK
-        decimal balance
-        string currency
-        boolean is_active
-    }
-    WALLET_TRANSACTIONS {
-        uuid id PK
-        uuid wallet_id FK
-        enum type
-        decimal amount
-        string reference_type
-        uuid reference_id
+        integer rating
+        text comment
     }
 ```
 
