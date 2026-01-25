@@ -21,7 +21,7 @@
   - [Super Admin Panel](#super-admin-panel)
   - [Support & Communication](#support--communication)
   - [AI & Personalization](#ai--personalization)
-- [Getting Started](#getting-started)
+
 
 ---
 
@@ -170,6 +170,144 @@ Direct lines for customer assistance.
 ### 🤖 AI & Personalization
 Smart features for a tailored experience.
 *   **Smart Recommendations**: AI-driven restaurant and meal suggestions based on order history and preferences.
+
+---
+
+## 💾 Database Design
+
+The platform relies on a robust schema to handle high-frequency transactions. Below is the Entity-Relationship Diagram (ERD) for the core modules.
+
+```mermaid
+erDiagram
+    %% Relationships
+    USERS ||--o{ CARTS : creates
+    USERS ||--o{ ORDERS : places
+    USERS ||--o{ WALLETS : owns
+    RESTAURANTS ||--o{ CARTS : belongs_to
+    RESTAURANTS ||--o{ ORDERS : fulfills
+    CARTS ||--|{ CART_ITEMS : contains
+    ORDERS ||--|{ ORDER_ITEMS : includes
+    ORDERS ||--o{ ORDER_HISTORY : logs
+    ORDERS ||--o{ TRANSACTIONS : generates
+    TRANSACTIONS ||--|{ PAYMENT_AUDITS : audited_by
+    TRANSACTIONS ||--o{ TRANSACTION_DETAILS : has_meta
+    TRANSACTIONS ||--|{ TRANSACTION_HISTORY : tracks
+    WALLETS ||--|{ WALLET_TRANSACTIONS : records
+
+    %% Table Definitions
+    USERS {
+        uuid id PK
+        string name
+        string email
+        string phone
+        string password
+    }
+    CARTS {
+        uuid id PK
+        uuid user_id FK
+        uuid restaurant_id FK
+        string session_id
+        decimal total_amount
+        timestamp created_at
+    }
+    CART_ITEMS {
+        uuid id PK
+        uuid cart_id FK
+        uuid product_id FK
+        integer quantity
+        decimal price
+        json options
+    }
+    ORDERS {
+        uuid id PK
+        uuid user_id FK
+        uuid restaurant_id FK
+        integer status_id FK
+        decimal subtotal
+        decimal delivery_fee
+        decimal discount
+        decimal total_amount
+        string coupon_code
+        timestamp created_at
+    }
+    ORDER_ITEMS {
+        uuid id PK
+        uuid order_id FK
+        uuid product_id FK
+        string name
+        integer quantity
+        decimal unit_price
+        decimal total_price
+        json options
+    }
+    ORDER_HISTORY {
+        uuid id PK
+        uuid order_id FK
+        integer status_id FK
+        uuid changed_by_user_id FK
+        text reason
+        timestamp created_at
+    }
+    TRANSACTIONS {
+        uuid id PK
+        uuid order_id FK
+        uuid user_id FK
+        decimal amount
+        string currency
+        integer type_id FK
+        integer status_id FK
+        string transaction_reference
+    }
+    TRANSACTION_DETAILS {
+        uuid id PK
+        uuid transaction_id FK
+        json gateway_response
+        text error_message
+        string ip_address
+    }
+    TRANSACTION_HISTORY {
+        uuid id PK
+        uuid transaction_id FK
+        integer status_from FK
+        integer status_to FK
+    }
+    TRANSACTION_INTEGRATION_CONFIGURATIONS {
+        integer id PK
+        string provider_name
+        boolean is_active
+        enum mode
+        text api_key
+        text api_secret
+    }
+    PAYMENT_AUDITS {
+        uuid id PK
+        uuid transaction_id FK
+        string action
+        uuid performed_by FK
+        json old_values
+        json new_values
+    }
+    WALLETS {
+        uuid id PK
+        uuid user_id FK
+        decimal balance
+        string currency
+        boolean is_active
+    }
+    WALLET_TRANSACTIONS {
+        uuid id PK
+        uuid wallet_id FK
+        enum type
+        decimal amount
+        string reference_type
+        uuid reference_id
+    }
+```
+
+### Key Modules
+*   **Cart Module**: Enforces single-vendor constraints via `restaurant_id`.
+*   **Order Module**: Snapshot architecture (`order_items`) preserves historical pricing.
+*   **Payment Module**: Comprehensive auditing (`payment_audits`) and raw gateway logs (`transaction_details`).
 
 ---
 
