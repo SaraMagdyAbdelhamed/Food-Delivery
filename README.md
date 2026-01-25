@@ -21,6 +21,9 @@
   - [Super Admin Panel](#super-admin-panel)
   - [Support & Communication](#support--communication)
   - [AI & Personalization](#ai--personalization)
+  - [Reviews & Ratings](#reviews--ratings)
+  - [Advanced Logistics](#advanced-logistics)
+  - [Database Design](#database-design)
 
 
 ---
@@ -140,6 +143,7 @@ Comprehensive tools for vendors to manage their business.
 *   **Menu Management**:
     *   **Categories**: Add, edit, and organize menu sections.
     *   **Products**: detailed item creation (images, prices, descriptions, calories).
+    *   **Ingredients**: Track raw materials and map them to products (e.g., Tomato, Cheese).
     *   **Variants & Add-ons**: Manage sizes, toppings, and required choices.
 *   **Logistics & Settings**:
     *   **Shipment Cost**: Set delivery fees based on distance or zones.
@@ -148,11 +152,14 @@ Comprehensive tools for vendors to manage their business.
     *   **List Orders**: Real-time view of incoming, processing, and ready orders.
     *   **Status Control**: Accept, reject, prepare, and mark orders as ready.
 *   **Employee Management**:
-    *   **Staff Profiles**: Create accounts for employees (managers, sales, support).
-    *   **Role Management**: Assign specific permissions to each employee.
+    *   **Staff Profiles**: Create accounts for employees (managers, sales, support) via the specific `Admins` table.
+    *   **Role Management**: Assign custom roles (e.g., "Menu Editor") with granular permissions to restrict access.
 
 ### 🛡️ Super Admin Panel
 Global control center for platform owners.
+*   **Admin Authentication**:
+    *   **Dedicated Login**: Separate authentication flow for Dashboard Admins vs Customers.
+    *   **RBAC**: Full Role-Based Access Control for managing internal teams.
 *   **Global Overview**:
     *   **Analytics**: View aggregate reports across all restaurants or filter by specific ones.
     *   **Financials**: Monitor total platform revenue, commissions, and payouts.
@@ -171,6 +178,18 @@ Direct lines for customer assistance.
 Smart features for a tailored experience.
 *   **Smart Recommendations**: AI-driven restaurant and meal suggestions based on order history and preferences.
 
+### ⭐ Reviews & Ratings
+Community-driven quality assurance.
+*   **Order Reviews**: Rate and review specific orders.
+*   **Item Reviews**: Comment on individual food items.
+*   **Interactive Comments**: Threaded replies between customers and vendors.
+
+### 🚚 Advanced Logistics
+Robust delivery infrastructure.
+*   **3rd Party Integration**: Connect with shipment providers (Uber Direct, Local Couriers) via API.
+*   **Real-time Tracking**: Granular location updates from the logistics provider.
+*   **Driver Assignment**: Auto or manual assignment of drivers to shipments.
+
 ---
 
 ## 💾 Database Design
@@ -188,10 +207,9 @@ erDiagram
     RESTAURANTS ||--o{ CARTS : belongs_to
     RESTAURANTS ||--o{ ORDERS : fulfills
     RESTAURANTS ||--o{ REVIEWS : receives
-    RESTAURANTS ||--|{ MENUS : offers
-    MENUS ||--|{ MENU_CATEGORIES : segmented_by
-    MENU_CATEGORIES ||--|{ PRODUCTS : lists
-    PRODUCTS ||--|{ PRODUCT_INGREDIENTS : composed_of
+    RESTAURANTS ||--|{ MENU_CATEGORIES : offers
+    MENU_CATEGORIES ||--|{ MENU_ITEMS : lists
+    MENU_ITEMS ||--|{ PRODUCT_INGREDIENTS : composed_of
     INGREDIENTS ||--o{ PRODUCT_INGREDIENTS : used_in
     CARTS ||--|{ CART_ITEMS : contains
     ORDERS ||--|{ ORDER_ITEMS : includes
@@ -202,9 +220,30 @@ erDiagram
     TRANSACTIONS ||--o{ TRANSACTION_DETAILS : has_meta
     TRANSACTIONS ||--|{ TRANSACTION_HISTORY : tracks
     WALLETS ||--|{ WALLET_TRANSACTIONS : records
+    WALLETS ||--|{ WALLET_AUDITS : secured_by
     SHIPMENTS }|--|| SHIPMENT_PROVIDERS : handled_by
     SHIPMENTS ||--|{ SHIPMENT_TRACKING : updates
     REVIEWS ||--o{ COMMENTS : triggers
+    ORDER_ARCHIVES ||--|{ ORDER_ARCHIVE_ITEMS : preserves
+    ADMINS ||--o{ ROLES : assigned
+    ROLES ||--|{ PERMISSIONS : have
+
+    %% Admin & RBAC
+    ADMINS {
+        uuid id PK
+        string name
+        string email
+        uuid role_id FK
+        uuid restaurant_id FK
+    }
+    ROLES {
+        uuid id PK
+        string name
+    }
+    PERMISSIONS {
+        uuid id PK
+        string name
+    }
 
     %% Core Modules
     USERS {
@@ -232,16 +271,12 @@ erDiagram
         boolean is_active
         decimal rating
     }
-    MENUS {
-        uuid id PK
-        string name
-        json availability_hours
-    }
     MENU_CATEGORIES {
         uuid id PK
+        uuid restaurant_id FK
         string name
     }
-    PRODUCTS {
+    MENU_ITEMS {
         uuid id PK
         string name
         decimal price
@@ -253,7 +288,7 @@ erDiagram
         string unit
     }
     %% Transactional
-    TRANACTIONS {
+    TRANSACTIONS {
         uuid id PK
         decimal amount
         string status
@@ -265,16 +300,15 @@ erDiagram
         decimal total_amount
         string status
     }
-    SHIPMENTS {
+    ORDER_ARCHIVES {
         uuid id PK
-        uuid order_id FK
-        string tracking_number
-        string status
+        uuid original_order_id
+        timestamp archived_at
     }
-    REVIEWS {
+    WALLET_AUDITS {
         uuid id PK
-        integer rating
-        text comment
+        string action
+        timestamp created_at
     }
 ```
 
@@ -282,6 +316,56 @@ erDiagram
 *   **Cart Module**: Enforces single-vendor constraints via `restaurant_id`.
 *   **Order Module**: Snapshot architecture (`order_items`) preserves historical pricing.
 *   **Payment Module**: Comprehensive auditing (`payment_audits`) and raw gateway logs (`transaction_details`).
+
+---
+
+### 📚 Detailed Schema Definitions
+
+#### 🛒 Cart Module
+*   **carts**: `id` (PK), `user_id`, `restaurant_id`, `session_id`, `total_amount`.
+*   **cart_items**: `id`, `cart_id`, `product_id`, `quantity`, `price`, `options`.
+
+#### 📦 Order Module
+*   **orders**: `id` (PK), `user_id`, `restaurant_id`, `status_id`, `subtotal`, `delivery_fee`, `tax`, `discount`, `total_amount`, `coupon_code`.
+*   **order_items**: `id`, `order_id`, `product_id`, `name`, `quantity`, `unit_price`, `total_price`, `options`.
+*   **order_history**: `id`, `order_id`, `status_id`, `changed_by_user_id`, `reason`.
+
+#### 💳 Payment & Transaction Module
+*   **transactions**: `id` (PK), `order_id`, `user_id`, `amount`, `currency`, `type_id`, `status_id`, `reference`.
+*   **transaction_details**: `transaction_id`, `gateway_response`, `error_message`, `ip_address`.
+*   **transaction_history**: `transaction_id`, `status_from`, `status_to`.
+*   **payment_audits**: `transaction_id`, `action`, `performed_by`, `old_values`, `new_values`.
+*   **wallets**: `user_id`, `balance`, `currency`.
+*   **wallet_transactions**: `wallet_id`, `type`, `amount`, `reference_type`.
+*   **wallet_audits**: `wallet_id`, `action`, `performed_by`, `old_balance`, `new_balance`.
+
+#### 🍽️ Restaurant & Menu Module
+*   **super_categories**: `id`, `name`, `image_url`.
+*   **restaurants**: `id`, `owner_id`, `super_category_id`, `name`, `description`, `rating`.
+*   **menu_categories**: `id`, `restaurant_id`, `name`.
+*   **menu_items**: `id`, `menu_category_id`, `name`, `price`, `calories`.
+*   **ingredients**: `id`, `restaurant_id`, `name`, `unit`.
+
+#### 🗄️ Archival Module
+*   **order_archives**: `id`, `original_order_id`, `final_status`, `order_data_snapshot`.
+*   **order_archive_items**: `id`, `archive_id`, `product_name`, `quantity`.
+
+#### 🛡️ Admin & RBAC Module
+*   **admins**: `id`, `name`, `email`, `role_id`, `restaurant_id` (nullable).
+*   **roles**: `id`, `name`, `guard_name`.
+*   **permissions**: `id`, `name`, `guard_name`.
+
+#### 👤 User Management Module
+*   **users**: `id`, `name`, `email`, `phone`, `role` (super_admin, vendor, customer, driver), `fcm_token`.
+*   **user_addresses**: `id`, `user_id`, `address_line`, `lat`, `lng`.
+
+#### 🚚 Shipment & Delivery Module
+*   **shipments**: `id`, `order_id`, `provider_id`, `driver_id`, `tracking_number`, `status`.
+*   **shipment_tracking**: `shipment_id`, `lat`, `lng`, `status_message`.
+
+#### 📊 Reporting Module
+*   **daily_sales_reports**: `restaurant_id`, `date`, `total_orders`, `total_revenue`.
+*   **reviews**: `user_id`, `order_id`, `restaurant_id`, `rating`, `comment`.
 
 ---
 
