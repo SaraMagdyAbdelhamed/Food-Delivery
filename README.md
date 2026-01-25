@@ -24,6 +24,8 @@
   - [Reviews & Ratings](#reviews--ratings)
   - [Advanced Logistics](#advanced-logistics)
   - [Database Design](#database-design)
+  - [System Flowcharts](#system-flowcharts)
+- [Getting Started](#getting-started)
 
 
 ---
@@ -366,6 +368,148 @@ erDiagram
 #### 📊 Reporting Module
 *   **daily_sales_reports**: `restaurant_id`, `date`, `total_orders`, `total_revenue`.
 *   **reviews**: `user_id`, `order_id`, `restaurant_id`, `rating`, `comment`.
+
+---
+
+## 🔄 System Flowcharts
+
+Visualizing the core logic of the platform.
+
+### Place Order & Lifecycle Flow
+
+This chart demonstrates the user journey from checkout to delivery, including branching payment logic.
+
+```mermaid
+flowchart TD
+    Start([User Initiates Checkout]) --> InputInfo[Enter Personal Info & Address]
+    InputInfo --> Method{Select Payment Details}
+
+    %% Payment Logic
+    Method -- "💳 Online Payment" --> Gateway[Redirect to Payment Gateway]
+    Gateway -->|Success| Verify[Verify Transaction]
+    Gateway -->|Fail| P_Fail([Payment Failed])
+    Verify -->|Verified| P_Success[Payment Successful]
+
+    Method -- "🪙 Wallet" --> BalCheck{Check Balance}
+    BalCheck -->|Insufficient| W_Fail([Insufficient Funds])
+    BalCheck -->|Sufficient| Deduct[Deduct Amount]
+    Deduct --> P_Success
+
+    Method -- "💵 Cash (COD)" --> LimitCheck{Check COD Limit}
+    LimitCheck -->|Exceeds| C_Fail([Order Limit Exceeded])
+    LimitCheck -->|Allowed| P_Success
+
+    %% Order Lifecycle
+    P_Success --> DraftOrder[Create Order Record]
+    DraftOrder --> NotifyRest[Notify Restaurant]
+    NotifyRest --> RestAction{Restaurant Response}
+
+    RestAction -- "Reject" --> Refund{Payment Type?}
+    Refund -- "Online/Wallet" --> AutoRefund[Reverse Transaction/Refund to Wallet]
+    Refund -- "COD" --> Void[Void Order]
+    AutoRefund --> Cancelled([Order Cancelled])
+    Void --> Cancelled
+
+    RestAction -- "Accept" --> Kitchen[Preparing Food]
+    Kitchen --> Ready[Order Ready]
+    Ready --> AssignDriver[Assign Driver]
+    AssignDriver --> Pickup[Driver Picks Up]
+    Pickup --> Transit[In Transit]
+    Transit --> Handover[Delivered to Customer]
+    Handover --> Complete([Order Complete])
+```
+
+---
+
+### 📡 Place Order: Sequence Diagram
+
+Technical interaction between the Mobile App, Backend API, and Third-Party Services.
+
+```mermaid
+sequenceDiagram
+    participant User as User App
+    participant API as API Gateway
+    participant Order as Order Service
+    participant DB as Database
+    participant Pay as Payment Gateway
+    participant Wallet as Wallet Service
+
+    User->>API: POST /api/orders/place
+    API->>Order: Validate Request (Cart, Address)
+    
+    rect rgb(240, 248, 255)
+    Note right of Order: Inventory & Price Check
+    Order->>DB: Check Product Availability
+    DB-->>Order: Returns Stock Status
+    end
+
+    alt Stock Unavailable
+        Order-->>User: Error: Item Out of Stock
+    else Stock Available
+        Order->>DB: Calculate Total & Tax
+        
+        alt Payment = Credit Card
+            Order->>Pay: Initiate Transaction
+            Pay-->>User: Redirect URL
+            User->>Pay: Complete Payment
+            Pay-->>Order: Webhook: Payment Success
+        else Payment = Wallet
+            Order->>Wallet: Check Balance
+            Wallet->>Wallet: Deduct Amount
+            Wallet-->>Order: Success
+        end
+
+        Order->>DB: CREATE Order (Status: Pending)
+        Order->>DB: CREATE Transaction Record
+        Order-->>User: 200 OK (Order Confirmed)
+    end
+```
+
+### 📝 Logic Pseudocode
+
+Basic algorithm for the order placement API.
+
+```python
+FUNCTION PlaceOrder(user_id, cart_id, payment_method, address_id):
+    # 1. Validation
+    IF NOT ValidateCart(cart_id):
+        RETURN Error("Invalid Cart")
+    
+    # 2. Inventory Check
+    FOR item IN cart_items:
+        IF item.stock < item.quantity:
+            RETURN Error("Item " + item.name + " Out of Stock")
+
+    # 3. Financials
+    subtotal = CalculateSubtotal(cart_items)
+    tax = subtotal * 0.14
+    delivery_fee = CalculateShipping(address_id)
+    total = subtotal + tax + delivery_fee
+
+    # 4. Payment Processing
+    TRY:
+        IF payment_method == "ONLINE":
+            transaction = PaymentGateway.Charge(total)
+        ELSE IF payment_method == "WALLET":
+            IF Wallet.Balance(user_id) < total:
+                RETURN Error("Insufficient Funds")
+            Wallet.Deduct(user_id, total)
+        
+        # 5. Persistence
+        DB.BeginTransaction()
+        order = DB.CreateOrder(user_id, total, status="PENDING")
+        DB.CreateOrderItems(order.id, cart_items)
+        DB.CreateTransaction(order.id, payment_method, "SUCCESS")
+        DB.Commit()
+
+        # 6. Notifications
+        SendPushNotification(restaurant_owner, "New Order Received")
+        RETURN Success(order)
+
+    CATCH Exception:
+        DB.Rollback()
+        RETURN Error("Order Failed")
+```
 
 ---
 
